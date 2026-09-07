@@ -1987,6 +1987,171 @@
     physics:{default:'arcade',arcade:{gravity:{y:1280},debug:false}},
     scene:[Boot,Title,Intro,LevelCard,World,Ending,Credits]};
   let game=new Phaser.Game(cfg);
+  // ========== GLOBAL PAUSE / RESUME HANDLER (Sekme arka plana atılınca DONMA sorunu KÖKTEN ÇÖZÜM) ==========
+  (function installGlobalPauseFix(){
+    try{
+      // tum global interval'lar (winBoss 500ms, Ending 500ms, ?testWin=1 intervali) icin basit bir kayit defteri
+      // sorun: tarayici background'a alininca setTimeout/setInterval cok yavaslar / durur; tekrar aktiflestiginde devam etmeyebilir
+      // cozum: her geri donuste (visible/focus) tum scene timerlarini force restart; AudioContext resume
+      var lastHiddenAt=0;
+      function hardResumeAll(){
+        try{
+          // 1) AudioContext (muzik/sesler donduyse) resume
+          try{
+            var ctx=null;
+            try{ctx=Music._getCtx && Music._getCtx();}catch(_){ctx=null;}
+            try{
+              if(window.__acTone)window.__acTone; // for forgive.html shared? yok burada
+            }catch(_){}
+            try{
+              if(window.webkitAudioContext && !ctx){
+                // boss icin yaratilan herhangi bir AudioContext? try find any
+                try{if(Music && Music.ensure)Music.ensure();}catch(_){}
+              }
+            }catch(_){}
+            // herhangi bir audioCtx varsa resume et
+            try{
+              var winAny=window;
+              if(winAny.__audioCtx && typeof winAny.__audioCtx.resume==='function'){
+                try{winAny.__audioCtx.resume();}catch(_){}
+              }
+            }catch(_){}
+          }catch(_){}
+          // 2) Music state sync:
+          try{Music.sync();}catch(_){}
+          // 3) Phaser GAME loop force resume (bazen oyun pause olur ama geri gelince acilmaz)
+          try{
+            if(game && game.loop){
+              try{game.loop.paused=false;}catch(_){}
+              try{if(game.paused)game.paused=false;}catch(_){}
+              try{if(game.scene)game.scene.pause=game.scene.pause;}catch(_){} // noop, just trigger
+            }
+          }catch(_){}
+          // 4) HER SAHNE ICIN: force sahne resume (bazen bireysel scene.sys.pause donmus)
+          try{
+            var all=game.scene.scenes;
+            if(all && all.length){
+              for(var i=0;i<all.length;i++){
+                var sc=all[i];
+                try{
+                  if(sc && sc.sys){
+                    if(sc.sys.paused){
+                      try{sc.scene.resume();}catch(_){try{sc.sys.paused=false;}catch(__){}}
+                    }
+                    // time eventleri sakinlasmissa tazele:
+                    try{if(sc.time && sc.time.paused)sc.time.paused=false;}catch(_){}
+                    try{if(sc.tweens){
+                      try{
+                        // paused tweensleri devreye sok
+                        var list=sc.tweens.getAllTweens?sc.tweens.getAllTweens():sc.tweens._tweens;
+                        if(list){
+                          for(var j=0;j<list.length;j++){
+                            try{
+                              var tw=list[j];
+                              if(tw && tw.isPaused && tw.isPaused())tw.play();
+                              else if(tw && tw.paused===true){try{tw.paused=false;tw.play?tw.play():null;}catch(_){}}
+                            }catch(_){}
+                          }
+                        }
+                      }catch(_){}
+                    }}catch(_){}
+                    // physics addon
+                    try{if(sc.physics && sc.physics.world && sc.physics.world.paused===true)sc.physics.world.paused=false;}catch(_){}
+                    // arcade gravity
+                    try{if(sc.physics && sc.physics.arcade && sc.physics.arcade.paused===true)sc.physics.arcade.paused=false;}catch(_){}
+                  }
+                }catch(_){}
+              }
+            }
+          }catch(_){}
+          // 5) Input tazele (bazen pointerlar kilitli kalir):
+          try{
+            if(game.input){
+              try{
+                if(game.input.mouse){
+                  try{game.input.mouse.enabled=true;game.input.mouse.requestPointerLock=null;}catch(_){}
+                }
+              }catch(_){}
+              try{
+                if(game.input.touch){
+                  try{game.input.touch.enabled=true;}catch(_){}
+                }
+              }catch(_){}
+              try{if(game.input.keyboard && game.input.keyboard.enabled===false)game.input.keyboard.enabled=true;}catch(_){}
+            }
+          }catch(_){}
+          // 6) Canvas'in render olmasi icin zorla 1 tick:
+          try{
+            if(game && game.renderer && game.renderer.snapshotCallback)null;
+            else if(game.step){try{game.step(Date.now());}catch(_){}}
+          }catch(_){}
+          // 7) Eger FORGIVE.HTML yonlendirmesi bekliyorsa tekrar dene (interval background'da durduysa diye)
+          try{
+            var href=window.location.href||'';
+            if(href.indexOf('forgive.html')<0){
+              // Ending veya World sahnelerinde isek: yonlendirme interval tekrar trigger etsin (background'da durduysa)
+              var worldS=null;try{worldS=game.scene.getScene('World');}catch(_){worldS=null;}
+              var endS=null;try{endS=game.scene.getScene('Ending');}catch(_){endS=null;}
+              // Yönlendirme flagi var mi? (winBoss cagrilmis ve _endingTransitioned=true ise)
+              if(worldS && (worldS._endingStarted===true || worldS._endingTransitioned===true)){
+                try{window.location.href='forgive.html';}catch(_){}
+              }
+              if(endS && endS._redirected!==true){
+                // Ending acik, yonlendirme gerceklesmemis: hemen zorla yonlendir
+                try{endS._redirected=true;window.location.href='forgive.html';}catch(_){}
+              }
+            }
+          }catch(_){}
+          // 8) Music ctx sakinlasmissa tekrar calistir:
+          try{if(typeof Music==='object' && state && state.music){try{Music.ensure();Music.sync();}catch(_){}}}catch(_){}
+          try{if(typeof SoundFX==='function'||typeof Sound==='function'){try{if(state && state.sfx===false)null;}catch(_){}}}catch(_){}
+          // 9) Canvas/DOM boyutu degismisse (cihaz donduyse) resize trigger:
+          try{
+            if(game.scale){try{game.scale.refresh();}catch(_){try{game.scale.updateLayout(true);}catch(__){}}}
+          }catch(_){}
+          // 10) Safari icin ekstra: gorunurlukten sonra null anim varsa start
+          try{
+            if(game && game.canvas && game.canvas.style){
+              // none -> block trick for Safari
+              try{game.canvas.style.display='none';game.canvas.offsetHeight;game.canvas.style.display='';}catch(_){}
+            }
+          }catch(_){}
+        }catch(bigErr){try{console.error('resume-all err:',bigErr);}catch(_){}}
+      }
+      // A) Visibility Change: Sekme / pencere on/off
+      try{
+        document.addEventListener('visibilitychange',function(){
+          try{
+            if(document.visibilityState==='hidden'){lastHiddenAt=Date.now();}
+            else{
+              // geri donuldu (visible)
+              var howLong=lastHiddenAt?(Date.now()-lastHiddenAt):0;
+              // 1sn+ arka planda kaldıysa (kısa süreli alıntılama ise yok say)
+              if(howLong>800)setTimeout(hardResumeAll,80);
+              else hardResumeAll();
+            }
+          }catch(_){}
+        },false);
+      }catch(_){}
+      // B) Focus (pencere aktif)
+      try{window.addEventListener('focus',function(){setTimeout(hardResumeAll,50);},false);}catch(_){}
+      // C) Window blur yok (gerek yok)
+      // D) Phaser GAME_PAUSE / GAME_RESUME eventleri (IDE'deki pause tuşu, oyun içi menü)
+      try{
+        if(game && game.events){
+          try{game.events.on(Phaser.Core.Events.GAME_RESUME,function(){setTimeout(hardResumeAll,30);});}catch(_){
+            try{game.events.on('resume',function(){setTimeout(hardResumeAll,30);});}catch(__){}
+          }
+          try{game.events.on(Phaser.Core.Events.RESUME,function(){setTimeout(hardResumeAll,30);});}catch(_){}
+        }
+      }catch(_){}
+      // E) Blur sonrasi geri gelme: window.onpageshow (safari baze)
+      try{window.addEventListener('pageshow',function(e){if(e && e.persisted)setTimeout(hardResumeAll,100);},false);}catch(_){}
+      // F) Oyun baslar baslamaz calis (ilk frame'de resume tetikle)
+      try{setTimeout(hardResumeAll,400);}catch(_){}
+    }catch(bigFatal){try{console.error('PAUSEFIX FATAL:',bigFatal);}catch(_){}}
+  })();
+  // ========================================
   try{window.__game=game;window.__state=state;window.__save=save;
     window.testWin=function(){
       try{
