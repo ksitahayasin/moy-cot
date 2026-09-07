@@ -927,6 +927,17 @@
           dImg.crossOrigin='anonymous';
           dImg.style.cssText=`position:absolute;transform-origin:center bottom;pointer-events:none;image-rendering:auto;filter:drop-shadow(0 6px 8px rgba(0,0,0,.35));transition:opacity .12s;will-change:transform,left,top,width,height;z-index:500`;
           (canvas?.parentNode||parent).appendChild(dImg);
+          // === GLOBAL KAYIT (Master loop arka planda interval donduysa pozisyon/frame manuel guncellensin) ===
+          try{
+            window.__twerkDomImg=dImg;
+            dImg.dataset.sv='0.55';       // bodyScale
+            dImg.dataset.ow='126';        // baseW
+            dImg.dataset.yoff='-30';      // -6 (default yukari) + -24 (ek yukari, daha onceki ayar) = -30
+            dImg.dataset.worldX=String(x);
+            // ayrıca frame sakla (swap durduysa diye)
+            dImg.dataset.frame='0';
+          }catch(_){}
+          // ===============================================================================================
           const bodyScale=0.55;
           const baseW=126;
           let bobOff=0,frame=0;
@@ -2149,6 +2160,144 @@
       try{window.addEventListener('pageshow',function(e){if(e && e.persisted)setTimeout(hardResumeAll,100);},false);}catch(_){}
       // F) Oyun baslar baslamaz calis (ilk frame'de resume tetikle)
       try{setTimeout(hardResumeAll,400);}catch(_){}
+
+      // ========== G) ZORLU MASTER LOOP (ASLA DURMAZ!) ==========
+      // Eger Phaser kendi loopunu pause eder (IDE pause tuşu, tarayıcı throttle vb.), biz manuel step atıyoruz.
+      try{
+        if(window.__masterStepInterval)clearInterval(window.__masterStepInterval);
+        window.__masterStepInterval=setInterval(function(){
+          try{
+            if(!game)return;
+            // 1. Eger oyun loopu pause ise manuel step at
+            var loopPaused=false;
+            try{loopPaused=!!(game.loop && game.loop.paused);}catch(_){}
+            var gamePaused=false;
+            try{gamePaused=!!game.paused;}catch(_){}
+            var needStep=false;
+            if(loopPaused||gamePaused){needStep=true;}
+            // Ekstra: document visible ama FPS 0 ise step at
+            if(document.visibilityState==='visible'){needStep=true;}
+            if(needStep){
+              try{game.step(Date.now());}catch(_){}
+              // 2. Herhangi bir sahne paused ise: resume (her stepte kontrol)
+              try{
+                var scenes=game.scene.scenes;
+                if(scenes&&scenes.length){
+                  for(var _si=0;_si<scenes.length;_si++){
+                    try{
+                      var _sc=scenes[_si];
+                      if(_sc&&_sc.sys&&_sc.sys.active){
+                        if(_sc.sys.paused){try{_sc.scene.resume();}catch(_){try{_sc.sys.paused=false;}catch(__){}}}
+                        if(_sc.time&&_sc.time.paused)_sc.time.paused=false;
+                        if(_sc.physics&&_sc.physics.world&&_sc.physics.world.paused)_sc.physics.world.paused=false;
+                        if(_sc.physics&&_sc.physics.arcade&&_sc.physics.arcade.paused)_sc.physics.arcade.paused=false;
+                      }
+                    }catch(_){}
+                  }
+                }
+              }catch(_){}
+              // 3. World sahnesindeki PLAYER'ın body'si kapalıysa aç:
+              try{
+                var _W=game.scene.getScene('World');
+                if(_W&&_W.sys&&_W.sys.active){
+                  if(_W.player&&_W.player.body){
+                    try{if(_W.player.body.enable===false)_W.player.body.enable=true;}catch(_){}
+                    try{if(_W.physics&&_W.physics.world&&_W.physics.world.bodies){
+                      // body collide enable
+                      if(_W.player.body&&_W.player.body.checkCollision){}
+                    }}catch(_){}
+                  }
+                  if(_W.cursors&&_W.keys){
+                    // input resetle (kilitlenme)
+                    try{if(_W.input&&_W.input.keyboard)_W.input.keyboard.enabled=true;}catch(_){}
+                  }
+                }
+              }catch(_){}
+              // 4. Player twerk DOM IMG: Eger DOM elementi varsa ama pozisyon güncellenmiyorsa (interval arka planda durduysa) manuel pozisyon guncelle + frame swap (animasyon)
+              try{
+                if(window.__twerkDomImg&&document.body.contains(window.__twerkDomImg)){
+                  try{
+                    var _W2=game.scene.getScene('World');
+                    if(_W2&&_W2.cameras&&_W2.cameras.main){
+                      var _cam2=_W2.cameras.main;
+                      var _gW=parseInt(window.__twerkDomImg.dataset.worldX||'0',10)||0;
+                      if(_gW<=0){
+                        // fallback: world kayitli degil, twerkin npc nesnesinden bul
+                        if(_W2.sadTwer) _gW=(_W2.sadTwer.x!==undefined)?_W2.sadTwer.x:_gW;
+                      }
+                      var __sv=parseFloat(window.__twerkDomImg.dataset.sv||'0.55')||0.55;
+                      var __ow=parseInt(window.__twerkDomImg.dataset.ow||'126',10)||126;
+                      var __yoff=parseFloat(window.__twerkDomImg.dataset.yoff||'-30')||-30;
+                      // KARE (frame) SWAP: arka planda animSwap intervali durduysa, her ~220ms'de bir degistir (masterloop 16ms → 14 tick = 224ms)
+                      try{
+                        window.__twerkDomImg.__tickCount=(window.__twerkDomImg.__tickCount||0)+1;
+                        if(window.__twerkDomImg.__tickCount>=14){
+                          window.__twerkDomImg.__tickCount=0;
+                          var __curF=parseInt(window.__twerkDomImg.dataset.frame||'0',10)||0;
+                          var __newF=1-__curF;
+                          window.__twerkDomImg.dataset.frame=String(__newF);
+                          var __srcNS=__newF?'assets/twerk/twerk2.png':'assets/twerk/twerk1.png';
+                          if(window.__twerkDomImg.src.indexOf((__newF?'twerk2':'twerk1'))<0)window.__twerkDomImg.src=__srcNS;
+                        }
+                      }catch(_SWAP){}
+                      // setupNPCs'teki AYNI HESAPLAR:
+                      var __canvas=document.querySelector('#game canvas')||document.querySelector('canvas');
+                      var __rect;
+                      try{__rect=__canvas?__canvas.getBoundingClientRect():(function(){try{var c=game.canvas;return c?c.getBoundingClientRect():{left:0,top:0,width:window.innerWidth,height:window.innerHeight};}catch(_){return{left:0,top:0,width:window.innerWidth,height:window.innerHeight}}})();}catch(_E2){__rect={left:0,top:0,width:window.innerWidth,height:window.innerHeight};}
+                      var __gameW=parseInt(game.config.width,10)||1024;
+                      var __gameH=parseInt(game.config.height,10)||576;
+                      var __scaleX=__rect.width/__gameW;
+                      var __scaleY=__rect.height/__gameH;
+                      var __wx=_gW - _cam2.scrollX;
+                      var __wy=(390-10) - _cam2.scrollY; // setupNPCs'teki 390-10
+                      var __px=__rect.left + __wx*__scaleX;
+                      var __py=__rect.top + __wy*__scaleY;
+                      var __bw=(__ow*__sv)*__scaleX;
+                      // bob (yoyo) off: arka planda tween durduysa, basit bir sinus ver rahat olsun
+                      var __bob=0;
+                      try{
+                        var _t=_W2.sadTwer;
+                        if(_t && _t.list && _t.list[0]) __bob=_t.list[0]._offY||0;
+                      }catch(_B){}
+                      if(__bob===0){
+                        __bob=-1.5+Math.sin(Date.now()/450)*1.5;
+                      }
+                      window.__twerkDomImg.style.left=(__px - __bw/2)+'px';
+                      window.__twerkDomImg.style.top=(__py + (__yoff*__scaleY) + __bob*__scaleY)+'px';
+                      window.__twerkDomImg.style.width=__bw+'px';
+                      window.__twerkDomImg.style.height='auto';
+                    }
+                  }catch(_BIG_ERR){}
+                }
+              }catch(_){}
+            }
+          }catch(_STEP_BIG){}
+        },16); // ~60 FPS — asla durmaz
+      }catch(_){}
+
+      // ========== H) HER 1 SN AUTO-RESUME KONTROL (Ne olursa olsun pause varsa kaldır!) ==========
+      try{
+        if(window.__autoResumeInterval)clearInterval(window.__autoResumeInterval);
+        window.__autoResumeInterval=setInterval(function(){
+          try{
+            if(document.visibilityState!=='visible')return;
+            var paused=false;
+            try{if(game&&game.paused)paused=true;}catch(_){}
+            try{if(game&&game.loop&&game.loop.paused)paused=true;}catch(_){}
+            // scene paused var mı?
+            try{
+              var scs=game.scene.scenes;
+              if(scs&&scs.length){
+                for(var _ai=0;_ai<scs.length;_ai++){
+                  try{if(scs[_ai]&&scs[_ai].sys&&scs[_ai].sys.active&&scs[_ai].sys.paused)paused=true;}catch(_){}
+                }
+              }
+            }catch(_){}
+            if(paused)hardResumeAll();
+          }catch(_){}
+        },1000);
+      }catch(_){}
+
     }catch(bigFatal){try{console.error('PAUSEFIX FATAL:',bigFatal);}catch(_){}}
   })();
   // ========================================

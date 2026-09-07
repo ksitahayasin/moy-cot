@@ -110,7 +110,7 @@
 </style>
 </head>
 <body>
-  <button class="skip" id="btnSkip">↩ Oyuna Geri Dön (Test)</button>
+  <button class="skip" id="btnSkip">↩ ANA MENÜYE DÖN</button>
 
   <div class="wrap" id="wrap">
     <div class="card" id="card">
@@ -244,8 +244,15 @@ var _redirecting=false;
 function goGame(){
   if(_redirecting)return;_redirecting=true;
   try{
-    // önce interval vb iptal etmiyoruz, direkt yönlendir
+    // once interval vb iptal etmiyoruz, direkt yonlendir
     var u='index.html?scene=Credits&rnd='+Math.floor(Math.random()*999999);
+    try{window.location.replace(u);}catch(_){try{window.location.href=u;}catch(__){window.location.assign(u);}}
+  }catch(_){}
+}
+function goToMainMenu(){
+  if(_redirecting)return;_redirecting=true;
+  try{
+    var u='index.html?scene=Title&rnd='+Math.floor(Math.random()*999999);
     try{window.location.replace(u);}catch(_){try{window.location.href=u;}catch(__){window.location.assign(u);}}
   }catch(_){}
 }
@@ -358,9 +365,9 @@ function init(){
     yesBtn.addEventListener('click',function(e){try{e.preventDefault();}catch(_){}onYes();});
     yesBtn.addEventListener('touchend',function(e){try{e.preventDefault();}catch(_){}onYes();},{passive:false});
   }
-  // SKIP (sağ üst test butonu)
+  // SKIP (sag ust ANA MENU butonu)
   var sk=document.getElementById('btnSkip');
-  if(sk){sk.addEventListener('click',function(e){try{e.preventDefault();}catch(_){}goGame();});}
+  if(sk){sk.addEventListener('click',function(e){try{e.preventDefault();}catch(_){}goToMainMenu();});}
   // SKIP VIDEO butonu
   if(skipVidBtn){skipVidBtn.addEventListener('click',function(e){try{e.preventDefault();}catch(_){}endVideo();});}
 
