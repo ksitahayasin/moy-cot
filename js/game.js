@@ -2085,37 +2085,32 @@
             if(game && game.renderer && game.renderer.snapshotCallback)null;
             else if(game.step){try{game.step(Date.now());}catch(_){}}
           }catch(_){}
-          // 7) Eger FORGIVE.HTML yonlendirmesi bekliyorsa tekrar dene (interval background'da durduysa diye)
-          try{
-            var href=window.location.href||'';
-            if(href.indexOf('forgive.html')<0){
-              // Ending veya World sahnelerinde isek: yonlendirme interval tekrar trigger etsin (background'da durduysa)
-              var worldS=null;try{worldS=game.scene.getScene('World');}catch(_){worldS=null;}
-              var endS=null;try{endS=game.scene.getScene('Ending');}catch(_){endS=null;}
-              // Yönlendirme flagi var mi? (winBoss cagrilmis ve _endingTransitioned=true ise)
-              if(worldS && (worldS._endingStarted===true || worldS._endingTransitioned===true)){
-                try{window.location.href='forgive.html';}catch(_){}
-              }
-              if(endS && endS._redirected!==true){
-                // Ending acik, yonlendirme gerceklesmemis: hemen zorla yonlendir
-                try{endS._redirected=true;window.location.href='forgive.html';}catch(_){}
-              }
-            }
-          }catch(_){}
-          // 8) Music ctx sakinlasmissa tekrar calistir:
+          // 7) Music ctx sakinlasmissa tekrar calistir:
           try{if(typeof Music==='object' && state && state.music){try{Music.ensure();Music.sync();}catch(_){}}}catch(_){}
           try{if(typeof SoundFX==='function'||typeof Sound==='function'){try{if(state && state.sfx===false)null;}catch(_){}}}catch(_){}
-          // 9) Canvas/DOM boyutu degismisse (cihaz donduyse) resize trigger:
+          // 8) Canvas/DOM boyutu degismisse (cihaz donduyse) resize trigger:
           try{
             if(game.scale){try{game.scale.refresh();}catch(_){try{game.scale.updateLayout(true);}catch(__){}}}
           }catch(_){}
-          // 10) Safari icin ekstra: gorunurlukten sonra null anim varsa start
+          // 9) Safari icin ekstra: gorunurlukten sonra null anim varsa start
           try{
             if(game && game.canvas && game.canvas.style){
-              // none -> block trick for Safari
               try{game.canvas.style.display='none';game.canvas.offsetHeight;game.canvas.style.display='';}catch(_){}
             }
           }catch(_){}
+          // 10) [YENI!] JavaScript Timer kilidi ac (arka planda tarayici interval/timeout dondururse "uyandır"):
+          try{
+            // 10a) 0 gecikmeli timeout lar ile tarayiciyi "zamanlayici calisiyormus gibi" zorla (3 kez)
+            for(var __zz=0;__zz<3;__zz++){try{setTimeout(function(){},0);}catch(_){}}
+            // 10b) requestAnimationFrame 3 kere ard arda (tarayici render zincirini uyandirir)
+            if(window.requestAnimationFrame){
+              try{
+                window.requestAnimationFrame(function(){try{if(window.requestAnimationFrame)window.requestAnimationFrame(function(){try{game&&game.renderer&&game.renderer.snapshot&&game.renderer.snapshot(function(){});}catch(_){}});}catch(_){}});
+              }catch(_){}
+            }
+          }catch(_){}
+          // Debug bilgi
+          try{console.log('[PAUSEFIX] hardResumeAll CALISTI: '+new Date().toLocaleTimeString());}catch(_){}
         }catch(bigErr){try{console.error('resume-all err:',bigErr);}catch(_){}}
       }
       // A) Visibility Change: Sekme / pencere on/off
@@ -2149,6 +2144,38 @@
       try{window.addEventListener('pageshow',function(e){if(e && e.persisted)setTimeout(hardResumeAll,100);},false);}catch(_){}
       // F) Oyun baslar baslamaz calis (ilk frame'de resume tetikle)
       try{setTimeout(hardResumeAll,400);}catch(_){}
+
+      // ========== [YENI!] GUVENLI 1sn "NAZO NAZAR KONTROL: Sadece visible ve acik paused varsa uyandir (agresif degil!)
+      try{
+        if(window.__safeNazoInterval)clearInterval(window.__safeNazoInterval);
+        window.__safeNazoInterval=setInterval(function(){
+          try{
+            // 1) Eger document HIDDEN ise hic bir sey yapma (arka planda calisma!)
+            if(document.visibilityState!=='visible')return;
+            // 2) Paused var mi diye bak (oyun:
+            var paused=false;
+            try{if(game&&game.paused)paused=true;}catch(_){}
+            try{if(game&&game.loop&&game.loop.paused)paused=true;}catch(_){}
+            var sPaused=false;
+            try{
+              var scs=game.scene.scenes;
+              if(scs&&scs.length){
+                for(var _z=0;_z<scs.length;_z++){
+                  try{if(scs[_z]&&scs[_z].sys&&scs[_z].sys.active&&scs[_z].sys.paused)sPaused=true;}catch(_){}
+                }
+              }
+            }catch(_){}
+            if(paused||sPaused){
+              try{console.log('[PAUSEFIX] NAZO NAZAR: paused algılandı, resume calistiriliyor');}catch(_){}
+              hardResumeAll();
+            }
+          }catch(_){}
+        },1000); // 1 saniyede bir (agresif degil)
+      }catch(_){}
+
+      // Informasyon: konsola bilgi yaz (oyun basarili yuklendi
+      try{console.log('[PAUSEFIX] AKTIF: GUVENLI modda (1sn nazar + visibility/resume eventleri ile donma onleniyor)');}catch(_){}
+
     }catch(bigFatal){try{console.error('PAUSEFIX FATAL:',bigFatal);}catch(_){}}
   })();
   // ========================================
@@ -2180,14 +2207,23 @@
     var testWinFlag=false;
     try{testWinFlag=(up2.get('testWin')==='1');}catch(_){testWinFlag=false;}
     if(testWinFlag){
-      // World sahnesi hazir olunca 900ms sonra testWin() calistir
+      // URL'yi temizle (tekrar tetiklenmemesi icin)
+      try{
+        var cleaner=(window.history&&window.history.replaceState);
+        if(cleaner){
+          // sadece dosya adi, query'siz
+          var cleanPath=window.location.pathname||'index.html';
+          try{window.history.replaceState({},document.title||'',cleanPath);}catch(_){}
+        }
+      }catch(_){}
+      // World sahnesi hazir olunca 2500ms (2.5 saniye) sonra testWin() calistir (kullanici World'u gorsun!)
       var _waitW=0;
       var _intW=setInterval(function(){
         try{
           var w=game.scene.getScene('World');
           if(w && w.sys && w.sys.active){
             clearInterval(_intW);
-            setTimeout(function(){try{window.testWin();}catch(_){}},900);
+            setTimeout(function(){try{window.testWin();}catch(_){}},2500);
           }else{
             _waitW++;
             if(_waitW>60){clearInterval(_intW);}
