@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no,maximum-scale=1" />
+  <meta name="theme-color" content="#2e2a45" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="description" content="The Princess Bird — Indie platformer macerası." />
+  <title>The Princess Bird</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Ctext y='13' font-size='14'%3E🐦%3C/text%3E%3C/svg%3E" />
+  <link rel="stylesheet" href="css/style.css?v=3.1" />
+  <script src="https://cdn.jsdelivr.net/npm/phaser@3.80.1/dist/phaser.min.js"></script>
+</head>
+<body>
+  <main id="game-shell">
+    <div id="game"></div>
+    <button id="pause-toggle" aria-label="Duraklat">
+      <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+        <rect x="6" y="5" width="4" height="14" rx="2"></rect>
+        <rect x="14" y="5" width="4" height="14" rx="2"></rect>
+      </svg>
+    </button>
+    <button id="fullscreen-toggle" aria-label="Tam ekran">
+      <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+        <path d="M8 5H6a1 1 0 0 0-1 1v2m12-3h2a1 1 0 0 1 1 1v2m-3 11h2a1 1 0 0 0 1-1v-2M8 19H6a1 1 0 0 1-1-1v-2" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"></path>
+      </svg>
+    </button>
+    <button id="sound-toggle" aria-label="Sesi aç/kapat">
+      <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+        <path d="M4 10v4a1 1 0 0 0 1 1h3l5 4V5L8 9H5a1 1 0 0 0-1 1Z" fill="currentColor"></path>
+        <path class="sound-waves" d="M16 9.3a1 1 0 0 1 1.4.1c.9 1 1.6 2.1 1.6 2.6s-.7 1.6-1.6 2.6a1 1 0 1 1-1.5-1.3c.5-.6.9-1.1 1-1.3-.1-.2-.5-.7-1-1.3a1 1 0 0 1 .1-1.4Z" fill="currentColor"></path>
+        <path class="sound-waves" d="M16.6 6.8a1 1 0 0 1 1.4.1C19.6 8.7 21 10.8 21 12s-1.4 3.3-3 5.1a1 1 0 1 1-1.5-1.2c1.1-1.3 2.2-3 2.5-3.9-.3-.9-1.4-2.6-2.5-3.9a1 1 0 0 1 .1-1.3Z" fill="currentColor"></path>
+        <path class="sound-slash" d="M4 4l16 16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"></path>
+      </svg>
+    </button>
+    <button id="settings-toggle" aria-label="Ayarlar">
+      <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+        <path d="M12 8.8a3.2 3.2 0 1 0 0 6.4 3.2 3.2 0 0 0 0-6.4Zm9 3.2-.97-.56a7.5 7.5 0 0 0-.1-1.04l1-.57a1 1 0 0 0 .36-1.37l-1.5-2.6a1 1 0 0 0-1.33-.4l-1.03.59a7.4 7.4 0 0 0-.9-.52V3.4a1 1 0 0 0-1-1h-3a1 1 0 0 0-1 1v1.16a7.4 7.4 0 0 0-.9.52l-1.03-.59a1 1 0 0 0-1.33.4l-1.5 2.6a1 1 0 0 0 .36 1.37l1 .57a7.5 7.5 0 0 0-.1 1.04L3 12a1 1 0 0 0-.36 1.37l1.5 2.6a1 1 0 0 0 1.33.4l1.03-.59c.29.2.59.38.9.52v1.16a1 1 0 0 0 1 1h3a1 1 0 0 0 1-1v-1.16c.31-.14.61-.32.9-.52l1.03.59a1 1 0 0 0 1.33-.4l1.5-2.6A1 1 0 0 0 20.93 12Z" fill="currentColor"></path>
+      </svg>
+    </button>
+    <section id="settings" class="panel hidden">
+      <h2>AYARLAR</h2>
+      <label><span>Müzik</span><input id="music" type="checkbox" checked></label>
+      <label class="slider-label"><span>Müzik Sesi</span><input id="music-vol" type="range" min="0" max="100" value="80"></label>
+      <label><span>Efekt sesleri</span><input id="sfx" type="checkbox" checked></label>
+      <label class="slider-label"><span>Efekt Sesi</span><input id="sfx-vol" type="range" min="0" max="100" value="90"></label>
+      <label><span>Ekran sarsıntısı</span><input id="shake" type="checkbox" checked></label>
+      <hr style="border:0;border-top:1px dashed #fff4c655;margin:12px 0">
+      <button id="reset-save">🔄  Veriyi Sıfırla</button>
+    </section>
+    <section id="pause" class="panel hidden">
+      <h2>⏸  DURAKLATILDI</h2>
+      <button id="pause-resume">Devam Et</button>
+      <button id="pause-mainmenu">Ana Menü</button>
+      <button id="pause-fullscreen">Tam Ekran</button>
+    </section>
+    <button id="touch-left" class="touch-btn" aria-label="Sola">◀</button>
+    <button id="touch-right" class="touch-btn" aria-label="Sağa">▶</button>
+    <button id="touch-fish" class="touch-btn empty" aria-label="Plak Fırlat" data-fish-count="0">PLAK</button>
+    <button id="touch-attack" class="touch-btn" aria-label="Saldır">VUR</button>
+    <button id="touch-jump" class="touch-btn" aria-label="Zıpla">ZIPLA</button>
+  </main>
+  <script src="js/game.js?v=5.2"></script>
+</body>
+</html>

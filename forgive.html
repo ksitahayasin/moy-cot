@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Affedermisin? 💖</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{width:100%;height:100%;overflow:hidden;font-family:Georgia,serif;-webkit-user-select:none;user-select:none}
+  body{
+    background:
+      radial-gradient(1000px 700px at 20% 20%,rgba(255,180,210,.35),transparent 60%),
+      radial-gradient(900px 650px at 80% 80%,rgba(255,220,150,.35),transparent 60%),
+      linear-gradient(180deg,#2a1744 0%,#1a1029 60%,#0f0720 100%);
+    position:relative;
+  }
+  .star{position:absolute;border-radius:50%;background:#fff;box-shadow:0 0 6px rgba(255,255,255,.8);opacity:.9}
+  @keyframes fall{
+    0%{transform:translateY(-10vh) rotate(0deg);opacity:0}
+    10%{opacity:1}
+    100%{transform:translateY(115vh) rotate(360deg);opacity:.3}
+  }
+  .h{position:absolute;top:-10vh;animation:fall linear infinite;filter:drop-shadow(0 3px 6px rgba(0,0,0,.4));pointer-events:none}
+  .glow{position:absolute;border-radius:50%;filter:blur(36px);opacity:.6;pointer-events:none}
+  .wrap{
+    position:relative;z-index:5;width:100%;height:100%;
+    display:flex;align-items:center;justify-content:center;flex-direction:column;padding:20px;
+  }
+  .card{
+    position:relative;
+    background:linear-gradient(180deg,#fff7dc 0%,#ffeec0 100%);
+    border-radius:30px;
+    padding:46px 62px 52px;
+    box-shadow:0 0 0 6px #ffc85a, 0 32px 100px rgba(0,0,0,.65);
+    max-width:680px;width:100%;text-align:center;border-top:12px solid #ffd88a;
+  }
+  .card::after{
+    content:"";position:absolute;inset:-22px;border-radius:36px;pointer-events:none;
+    background:
+      radial-gradient(circle at 25% 15%,rgba(255,150,180,.32),transparent 55%),
+      radial-gradient(circle at 75% 85%,rgba(255,230,160,.4),transparent 60%);
+  }
+  .deco{display:flex;justify-content:center;gap:24px;margin-bottom:14px;position:relative;z-index:2}
+  .deco span{font-size:42px;filter:drop-shadow(0 4px 8px rgba(0,0,0,.3));animation:pop 1.4s ease-in-out infinite alternate}
+  .deco span:nth-child(2){animation-delay:.4s}
+  .deco span:nth-child(3){animation-delay:.8s}
+  @keyframes pop{from{transform:translateY(0) scale(1)}to{transform:translateY(-10px) scale(1.08)}}
+  h1{
+    font-size:52px;color:#5d3aa0;-webkit-text-stroke:3px #3a2270;
+    text-shadow:0 7px 0 rgba(90,50,140,.18);letter-spacing:1.6px;line-height:1.1;position:relative;z-index:2;margin-bottom:8px;
+  }
+  .sub{
+    font-size:24px;color:#7a55c2;-webkit-text-stroke:2px #3a2270;margin-bottom:34px;position:relative;z-index:2;font-style:italic;
+  }
+  .row{position:relative;display:flex;gap:32px;justify-content:center;align-items:center;flex-wrap:wrap;z-index:2}
+  .btn{
+    font-family:Georgia,serif;font-weight:900;font-size:30px;letter-spacing:2px;padding:20px 52px;border-radius:20px;
+    cursor:pointer;border:none;user-select:none;white-space:nowrap;min-width:200px;
+    transition:transform .12s ease;box-shadow:0 10px 0 rgba(0,0,0,.25), 0 16px 30px rgba(0,0,0,.3);
+    position:relative;
+  }
+  .btn:active{transform:translateY(4px);box-shadow:0 6px 0 rgba(0,0,0,.22), 0 10px 20px rgba(0,0,0,.28) !important}
+  .yes{
+    background:linear-gradient(180deg,#8ce26b,#6bbf4e);color:#2a5015;-webkit-text-stroke:2px #2a5015;
+    border:4px solid #7bcb5b;box-shadow:0 10px 0 #4d8a36, 0 16px 30px rgba(0,0,0,.28);
+  }
+  .yes:hover{transform:translateY(-2px) scale(1.03)}
+  .no{
+    background:linear-gradient(180deg,#ff95b3,#ff6588);color:#701e38;-webkit-text-stroke:2px #701e38;
+    border:4px solid #ff7ea6;box-shadow:0 10px 0 #b83f62, 0 16px 30px rgba(0,0,0,.28);
+    transition:left .22s cubic-bezier(.2,1.2,.5,1), top .22s cubic-bezier(.2,1.2,.5,1), transform .22s, background .2s;
+  }
+  .no-holder{position:relative;width:200px;height:80px;display:inline-block}
+  .skip{
+    position:absolute;right:20px;top:20px;z-index:10;background:rgba(255,255,255,.15);color:#fff9ea;
+    border:2px solid rgba(255,255,255,.25);padding:8px 18px;border-radius:12px;font-size:14px;cursor:pointer;
+    font-family:Georgia,serif;letter-spacing:1px;backdrop-filter:blur(6px);
+  }
+  .skip:hover{background:rgba(255,255,255,.25)}
+  #vLayer{
+    position:fixed;inset:0;background:#000;z-index:99999;display:none;align-items:center;justify-content:center;flex-direction:column;
+    padding:20px;
+  }
+  #vLayer.show{display:flex;animation:fade .35s ease forwards}
+  @keyframes fade{from{opacity:0}to{opacity:1}}
+  #yesVideo{
+    box-shadow:0 0 0 4px rgba(255,140,180,.8), 0 20px 80px rgba(255,100,160,.45);
+    border-radius:12px;
+    max-width:100vw;max-height:100vh;width:auto;height:auto;object-fit:none;
+  }
+  #skipVideo{
+    position:absolute;right:24px;bottom:24px;z-index:10;
+    background:rgba(255,90,150,.85);color:#fff;font-family:Georgia,serif;font-weight:900;font-size:16px;letter-spacing:2px;
+    padding:12px 24px;border-radius:12px;cursor:pointer;border:2px solid #ffb0cd;backdrop-filter:blur(4px);
+  }
+  #skipVideo:hover{background:rgba(255,90,150,1)}
+  #fallbackMsg{
+    position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
+    color:#fff9ea;font-family:Georgia,serif;font-size:28px;text-align:center;line-height:1.5;
+    text-shadow:0 0 20px rgba(255,150,180,.8);-webkit-text-stroke:2px #3a2270;
+    display:none;z-index:5;
+  }
+  @media(max-width:640px){
+    h1{font-size:36px}
+    .sub{font-size:18px}
+    .card{padding:30px 22px 38px}
+    .btn{font-size:22px;padding:14px 28px;min-width:140px}
+    .no-holder{width:140px;height:72px}
+  }
+</style>
+</head>
+<body>
+  <button class="skip" id="btnSkip">↩ Oyuna Geri Dön (Test)</button>
+
+  <div class="wrap" id="wrap">
+    <div class="card" id="card">
+      <div class="deco">
+        <span>💖</span><span>✨</span><span>💖</span>
+      </div>
+      <h1>BENİ AFFEDERMİSİN?</h1>
+      <div class="sub">lütfen bebeğim çok yalvarıyorum 🥺✨</div>
+
+      <div class="row" id="row">
+        <button class="btn yes" id="yesBtn">❤️ EVET</button>
+        <div class="no-holder" id="noHolder">
+          <button class="btn no" id="noBtn">HAYIR</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="vLayer">
+    <video id="yesVideo" playsinline preload="auto" webkit-playsinline></video>
+    <button id="skipVideo">ATLA ▶</button>
+    <div id="fallbackMsg">💖 Evet! 💖<br><span style="font-size:22px">Yönlendiriliyorsun...</span></div>
+  </div>
+
+<script>
+/* === ARKA PLAN SÜSLERİ (ES5 uyumlu) === */
+(function initBg(){
+  var colors=['#ff8ab0','#ffb4d0','#ffd96b','#fff5c2','#c5a4ff','#9ed4ff','#ffd27a'];
+  var i;
+  for(i=0;i<170;i++){
+    var s=document.createElement('div');s.className='star';
+    var sz=Math.random()*3+1;
+    s.style.width=sz+'px';s.style.height=sz+'px';
+    s.style.left=Math.random()*100+'%';
+    s.style.top=Math.random()*100+'%';
+    s.style.opacity=0.4+Math.random()*0.6;
+    s.style.background=colors[Math.floor(Math.random()*colors.length)];
+    document.body.appendChild(s);
+  }
+  for(i=0;i<10;i++){
+    var g=document.createElement('div');g.className='glow';
+    var sz=260+Math.random()*460;
+    g.style.width=sz+'px';g.style.height=sz+'px';
+    g.style.left=(Math.random()*100-10)+'%';
+    g.style.top=(Math.random()*100-10)+'%';
+    var c=['#ff9fbf','#ffd48a','#d6a8ff','#9ad6ff'];
+    g.style.background=c[Math.floor(Math.random()*c.length)];
+    g.style.opacity=0.35+Math.random()*0.35;
+    document.body.appendChild(g);
+  }
+  var harts=['💖','💗','💘','💕','💞','❤️'];
+  for(i=0;i<22;i++){
+    var d=document.createElement('div');d.className='h';
+    d.textContent=harts[Math.floor(Math.random()*harts.length)];
+    var sz2=18+Math.random()*32;
+    d.style.fontSize=sz2+'px';
+    d.style.left=Math.random()*100+'%';
+    var dur=5.5+Math.random()*8;
+    d.style.animationDuration=dur+'s';
+    d.style.animationDelay=(-Math.random()*dur)+'s';
+    document.body.appendChild(d);
+  }
+})();
+
+/* === SESLER (Web Audio) === */
+var _ac;
+function playTone(freq,dur,type,gain){
+  try{
+    if(!_ac){_ac=new (window.AudioContext||window.webkitAudioContext)();}
+    var o=_ac.createOscillator();
+    var g=_ac.createGain();
+    o.type=type||'sine';o.frequency.value=freq;
+    g.gain.value=gain||0.04;
+    o.connect(g);g.connect(_ac.destination);
+    o.start();
+    g.gain.exponentialRampToValueAtTime(0.0001, _ac.currentTime+dur);
+    o.stop(_ac.currentTime+dur+0.02);
+  }catch(_){}
+}
+
+/* === HAYIR BUTON KAÇIŞ (ES5 UYUMLU) === */
+var noBtn=null,row=null,noCount=0;
+var taunts=[
+  "yakala","yakala beni","heeey","yavaşsın kral","napıyosun","vınzı","hızlı ol",
+  "yetersizsin","🥴","geldin mi?","hadi hadi","yakala yakala 🤭","tut beni",
+  "neden kaçıyorum ben 🫣","daha hızlı","görüyom seni","oo neler"
+];
+function safeClientX(e){
+  if(e){if(e.clientX)return e.clientX;if(e.touches&&e.touches.length)return e.touches[0].clientX;}
+  return window.innerWidth/2+100;
+}
+function safeClientY(e){
+  if(e){if(e.clientY)return e.clientY;if(e.touches&&e.touches.length)return e.touches[0].clientY;}
+  return window.innerHeight/2;
+}
+function dodge(e){
+  try{
+    var bx=noBtn.getBoundingClientRect();
+    var maxX=window.innerWidth-bx.width-48;
+    var maxY=window.innerHeight-bx.height-48;
+    var nx=bx.left,ny=bx.top,tries=0;
+    var mx=safeClientX(e),my=safeClientY(e);
+    if(maxX<40)maxX=40;if(maxY<40)maxY=40;
+    while(tries<18){
+      var dx=(nx+bx.width/2)-mx;
+      var dy=(ny+bx.height/2)-my;
+      if(Math.sqrt(dx*dx+dy*dy)<260){
+        nx=30+Math.random()*maxX;
+        ny=30+Math.random()*maxY;
+      }else{break;}
+      tries++;
+    }
+    noBtn.style.position='fixed';
+    noBtn.style.left=nx+'px';
+    noBtn.style.top=ny+'px';
+    var rot=(noCount%2===0)?-7:7;
+    noBtn.style.transform='rotate('+rot+'deg)';
+    setTimeout(function(){if(noBtn)noBtn.style.transform='rotate(0deg)';},220);
+    noCount++;
+    if(noCount%2===0){
+      var t=taunts[Math.floor(Math.random()*taunts.length)];
+      noBtn.textContent=t;
+      setTimeout(function(){if(noBtn)noBtn.textContent='HAYIR';},820);
+    }
+    try{playTone(520+Math.random()*360,.05,'triangle',.03);}catch(_){}
+  }catch(_){}
+}
+
+/* === YÖNLENDİRME === */
+var _redirecting=false;
+function goGame(){
+  if(_redirecting)return;_redirecting=true;
+  try{
+    // önce interval vb iptal etmiyoruz, direkt yönlendir
+    var u='index.html?scene=Credits&rnd='+Math.floor(Math.random()*999999);
+    try{window.location.replace(u);}catch(_){try{window.location.href=u;}catch(__){window.location.assign(u);}}
+  }catch(_){}
+}
+
+/* === EVET BUTON + YES.MP4 OYNATMA (%100 çalışması için 4 katlı fallback) === */
+var vLayer=null,v=null,skipVidBtn=null,fallbackMsg=null,_vidTimeout=null,_vidTimeout2=null;
+function endVideo(){
+  goGame();
+}
+function playYesVideo(){
+  // 1) UI göster
+  vLayer.classList.add('show');
+  fallbackMsg.style.display='none';
+
+  // 2) Fallback: SADECE metadata YÜKLENMİYORSA (video hiç gelmiyorsa) 2.5 sn sonra fallback
+  //    Video oynuyorsa, ZORLU SÜRE sonu YOK, video KENDİ KENDİNE BİTENE KADAR beklenir!
+  var ok=false;
+  var failToCredits=function(m){
+    if(ok)return;ok=true;
+    try{console.warn('video: '+m);}catch(_){}
+    try{v.style.display='none';}catch(_){}
+    fallbackMsg.style.display='block';
+    setTimeout(function(){goGame();},1500);
+  };
+  // 2500 ms içinde metadata YÜKLEMEZSE fallback (video hiç gelmiyorsa)
+  _vidTimeout=setTimeout(function(){
+    try{if(!v.readyState||v.readyState<1)failToCredits('no-metadata-2.5s');}catch(_){failToCredits('timeout-check');}
+  },2500);
+
+  // 3) Eventler
+  var onMeta=function(){
+    try{playTone(660,.06,'sine',.04);}catch(_){}
+    try{clearTimeout(_vidTimeout);}catch(_){} // metadata yüklendi, fallback timer'i KAPAT
+  };
+  var onErr=function(){failToCredits('error-event');};
+  var onStall=function(){
+    // Duraklama var ama metadata YÜKLENDİYSE (video oynuyordu) — KAPATMA, bekle (network yavaş olabilir)
+    // Sadece readyState<1 ise (hiç yüklenmemişse) hata say
+    try{
+      if(!v.readyState||v.readyState<1)failToCredits('stalled-nometa');
+    }catch(_){}
+  };
+  var onEnd=function(){ok=true;clearTimeout(_vidTimeout);clearTimeout(_vidTimeout2);endVideo();};
+  var onPlayOK=function(){try{clearTimeout(_vidTimeout);}catch(_){}}; // oynatma başlayınca metadata fallback KAPAT
+  // eventleri temizle (tekrar eklenmesin diye)
+  try{v.removeEventListener('loadedmetadata',onMeta);}catch(_){}
+  try{v.removeEventListener('error',onErr);}catch(_){}
+  try{v.removeEventListener('stalled',onStall);}catch(_){}
+  try{v.removeEventListener('ended',onEnd);}catch(_){}
+  try{v.removeEventListener('playing',onPlayOK);}catch(_){}
+  try{v.addEventListener('loadedmetadata',onMeta);}catch(_){}
+  try{v.addEventListener('error',onErr);}catch(_){}
+  try{v.addEventListener('stalled',onStall);}catch(_){}
+  try{v.addEventListener('ended',onEnd);}catch(_){}
+  try{v.addEventListener('playing',onPlayOK);}catch(_){}
+
+  // 4) Kaynak ayarla
+  try{v.style.display='block';}catch(_){}
+  try{
+    // cache'i zorlamak için rnd ekle
+    v.src='assets/cutscenes/yes.mp4?r='+Math.floor(Math.random()*999999);
+  }catch(_){failToCredits('src-err');return;}
+
+  // 5) Şimdi oynatmayı dene:
+  // Adım A: Sesli dene
+  try{
+    v.muted=false;
+    var p=v.play();
+    if(p && typeof p.then==='function'){
+      p.then(function(){
+        ok=false; // oynadıysa, SADECE ended event veya ATLA çalışsın (sonuna kadar BEKLE!)
+      }).catch(function(err1){
+        // Adım B: Sessiz (muted) dene
+        try{console.warn('unmuted play failed:', err1 && err1.message);}catch(_){}
+        try{v.muted=true;}catch(_){}
+        var p2;
+        try{p2=v.play();}catch(_){p2=null;}
+        if(p2 && typeof p2.then==='function'){
+          p2.then(function(){}).catch(function(err2){
+            try{console.warn('muted play also failed');}catch(_){}
+            failToCredits('all-play-rejected');
+          });
+        }else if(!p2){
+          failToCredits('play-call-failed-mut');
+        }
+      });
+    }
+  }catch(playErr){
+    failToCredits('play-exception');
+  }
+}
+function onYes(){
+  try{playTone(880,.1,'sine',.05);}catch(_){}
+  try{playTone(1180,.12,'sine',.04);}catch(_){}
+  playYesVideo();
+}
+
+/* === DOM HAZIR OLUNCA EVENT BAGLANTILARI === */
+function init(){
+  noBtn=document.getElementById('noBtn');
+  row=document.getElementById('row');
+  vLayer=document.getElementById('vLayer');
+  v=document.getElementById('yesVideo');
+  skipVidBtn=document.getElementById('skipVideo');
+  fallbackMsg=document.getElementById('fallbackMsg');
+
+  // EVET butonu
+  var yesBtn=document.getElementById('yesBtn');
+  if(yesBtn){
+    yesBtn.addEventListener('click',function(e){try{e.preventDefault();}catch(_){}onYes();});
+    yesBtn.addEventListener('touchend',function(e){try{e.preventDefault();}catch(_){}onYes();},{passive:false});
+  }
+  // SKIP (sağ üst test butonu)
+  var sk=document.getElementById('btnSkip');
+  if(sk){sk.addEventListener('click',function(e){try{e.preventDefault();}catch(_){}goGame();});}
+  // SKIP VIDEO butonu
+  if(skipVidBtn){skipVidBtn.addEventListener('click',function(e){try{e.preventDefault();}catch(_){}endVideo();});}
+
+  // HAYIR butonu kaçış eventleri (HEPSİ)
+  if(noBtn){
+    // ilk başta konumunu holder'a oturt
+    var nh=document.getElementById('noHolder');
+    try{
+      if(nh){
+        var hb=nh.getBoundingClientRect();
+        noBtn.style.position='fixed';
+        noBtn.style.left=(hb.left+(hb.width/2)-hb.width/2)+'px';
+        noBtn.style.top=(hb.top)+'px';
+      }
+    }catch(_){}
+    noBtn.addEventListener('mouseenter',dodge);
+    noBtn.addEventListener('mouseover',dodge);
+    noBtn.addEventListener('pointerenter',dodge);
+    noBtn.addEventListener('touchstart',function(ev){try{ev.preventDefault();}catch(_){}dodge(ev);},{passive:false});
+    noBtn.addEventListener('click',function(ev){try{ev.preventDefault();ev.stopPropagation();}catch(_){}dodge(ev);});
+  }
+}
+if(document.readyState==='loading'){document.addEventListener('DOMContentLoaded',init);}else{init();}
+</script>
+</body>
+</html>
